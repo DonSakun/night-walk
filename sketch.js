@@ -23,9 +23,21 @@ function setup() {
 
 function draw() {
   background(0);
-  drawReadout(wakeLockStatus());
+
   if (!started) {
     drawStartText();
+    return;
+  }
+
+  if (window.sensorsEnabled) {
+    const moved = sqrt(
+      accelerationX * accelerationX +
+      accelerationY * accelerationY +
+      accelerationZ * accelerationZ
+    );
+    drawReadout('motion ' + nf(moved, 1, 2), 0);
+  } else {
+    drawReadout('motion waiting', 0);
   }
 }
 
@@ -59,13 +71,15 @@ function wakeLockStatus() {
     : 'wake lock: not held (asked ' + wakeLockAsks + ')';
 }
 
-function drawReadout(message) {
+function drawReadout(message, line) {
+  // line 0 sits at READOUT_Y; each further line is two text-heights below it
   push();
   fill(255, 255, 255, 160);
   noStroke();
   textAlign(CENTER, CENTER);
-  textSize(READOUT_SIZE * min(width, height));
-  text(message, width / 2, READOUT_Y * height);
+  const lineHeight = READOUT_SIZE * min(width, height);
+  textSize(lineHeight);
+  text(message, width / 2, READOUT_Y * height + line * lineHeight * 2);
   pop();
 }
 

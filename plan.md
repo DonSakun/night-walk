@@ -84,14 +84,14 @@ Checks that use temporary text on screen (steps 3 to 5) are removed in step 12. 
 
 ### Step 4. Read the motion
 - Build: after start, show the phone's acceleration as a number on screen, temporarily, and nothing else. It should be one number for how hard the phone is moving.
-- Use: `window.sensorsEnabled` before reading anything, p5's `accelerationX/Y/Z` and `pAccelerationX/Y/Z`, `mag()`, `nf()` or `text()` for the readout. No custom `devicemotion` listener, and no `rotationRate*` (p5 does not have it). If the number never rises while you swing: either motion was denied (p5-phone turns `sensorsEnabled` on either way, so the gate passes and the readout just sits at zero), or this phone reports its motion in a way p5 can't read, which may also pop p5-phone's debug overlay over the black screen. Stop and tell me what you see instead of writing down numbers.
+- Use: `window.sensorsEnabled` before reading anything, p5's `accelerationX/Y/Z` and `pAccelerationX/Y/Z`, `sqrt()` of the three squares for how hard the phone is moving (p5 2's `mag()` takes only two arguments, so it would drop Z), `nf()` or `text()` for the readout. No custom `devicemotion` listener, and no `rotationRate*` (p5 does not have it). If the number never rises while you swing: either motion was denied (p5-phone turns `sensorsEnabled` on either way, so the gate passes and the readout just sits at zero), or this phone reports its motion in a way p5 can't read, which may also pop p5-phone's debug overlay over the black screen. Stop and tell me what you see instead of writing down numbers.
 - Laptop: no check.
 - Phone: holding the phone still, the number sits low. Hanging in my hand and swinging as I walk, it rises on each swing. I write down roughly the highest value when swinging and the lowest when still, and give them to you.
 - New numbers: none.
 
 ### Step 5. Count swings
 - Build: count a swing when the movement number passes a set size, and ignore anything for a short pause after each swing so one arm swing doesn't count twice. A tap or click counts as a swing too, except the start tap. Show the swing count on screen, temporarily.
-- Use: `mag()`, `millis()`, `mousePressed()` (returning `false`). Start from the numbers I wrote down in step 4.
+- Use: the same `sqrt()` magnitude as step 4 (p5 2's `mag()` is two-axis only), `millis()`, `mousePressed()` (returning `false`). Start from the numbers I wrote down in step 4.
 - Laptop: no check.
 - Phone: each arm swing adds exactly one to the count. Standing still adds nothing. A tap adds one. The start tap adds nothing.
 - New numbers: `SWING_SIZE`, `SWING_PAUSE_MS`.
