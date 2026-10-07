@@ -1,7 +1,19 @@
 function setup() {
-  createCanvas(400, 400);
+  createCanvas(windowWidth, windowHeight);
+  background(0);
+  lockGestures();
+  showDesktopQr();
 }
 
 function draw() {
-  background(220);
+  background(0);
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+  background(0);
+}
+
+function mousePressed() {
+  return false;
 }

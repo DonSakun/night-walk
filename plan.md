@@ -55,36 +55,36 @@ The end: just let it fade, nothing happen.
 
 **Before you start.** Read the p5-phone skill and the p5js-2x skill. Write p5.js 2 code. Read phone values from p5's own globals and use p5-phone for permissions. Do not write your own sensor, touch or audio plumbing. Use `mousePressed` / `mouseReleased`, never `touchStarted`. Change only sketch.js. If index.html does not already load p5.js 2 and p5-phone, stop and tell me. Stop after each step and wait for me to check it on my phone.
 
-**Numbers rule.** Every number that I may want to tune goes in a named value at the very top of sketch.js, with a one-line comment saying what it does. Each step lists the ones it adds.
+**Numbers rule.** Every number that I may want to tune goes in a named value at the very top of sketch.js, with a one-line comment saying what it does. Each step lists the ones it adds. Two kinds of value live differently. Screen geometry (text position, glow position and size) is written as a fraction of the screen and applied at draw time, like `START_TEXT_Y * height`, because the top of the file has no `width` or `height` yet. Colours are written as three plain numbers, red, green, blue, and built into p5 colours with `color()` inside `setup()`, because p5's functions do not exist at the top of the file at all: calling `color()` or `random()` up there throws.
 
 **Laptop rule.** My plan says no laptop check, so every step says "Laptop: no check."
 
-Checks that use temporary text on screen (steps 3 to 5) are removed in step 10.
+Checks that use temporary text on screen (steps 3 to 5) are removed in step 12. They share the two numbers added in step 3, `READOUT_SIZE` and `READOUT_Y`, so every readout has one size and one place to tune.
 
 ### Step 1. Dark canvas
-- Build: a full-screen portrait canvas that is black, with page gestures locked so the phone doesn't scroll, zoom or pull to refresh.
-- Use: `createCanvas(windowWidth, windowHeight)`, `background()`, p5-phone `lockGestures()`. Return `false` from `mousePressed()` as the p5-phone skill's minimal sketch does.
+- Build: a full-screen canvas that is black from its first frame, with page gestures locked so the phone doesn't scroll, zoom or pull to refresh. Add a `windowResized()` that resizes the canvas and repaints it black, so turning the phone in your hand doesn't leave a hole. Show a desktop QR with p5-phone's `showDesktopQr()`, so the laptop can open this same sketch on the phone; it appears on the laptop only and does nothing on the phone.
+- Use: `createCanvas(windowWidth, windowHeight)`, `background()` in `setup()` and at the top of every `draw()` frame, `windowResized()`, `resizeCanvas()`, p5-phone `lockGestures()` and `showDesktopQr()`. Return `false` from `mousePressed()` as the p5-phone skill's minimal sketch does.
 - Laptop: no check.
-- Phone: a black screen. Swiping, pinching and long-pressing do nothing.
+- Phone: a black screen. Swiping, pinching and long-pressing do nothing. Turning the phone keeps the whole screen black.
 - New numbers: none.
 
 ### Step 2. Start screen and motion permission
-- Build: a small "tap to start" low on the screen, as in layout-lantern.jpg, shown only before start. One tap asks for motion permission. After it, the text is gone and the screen is fully black. Keep a "started" flag. The start tap itself is not a swing.
-- Use: one activation style only, `enableSensorCanvas('tap to start')` (or the nearest p5-phone style that can show small text low on the screen), `window.sensorsEnabled`, `userSetupComplete()`, `textAlign()`, `textSize()`, `fill()`, `text()`. If the tap leaves the sketch stuck after the person denies motion access, stop and tell me instead of working around it.
+- Build: a small "tap to start" low on the screen, as in layout-lantern.jpg, shown only before start. One tap asks for motion permission. When the request finishes, a "started" flag goes up, the text is gone and the screen is fully black. The start tap itself is not a swing.
+- Use: one activation style only, `enableGyroCanvas('')`. The empty message is deliberate: p5-phone's own canvas text is centred, sits at 90% down, and stops redrawing after about 2.5 seconds, so it can neither match the layout nor be trusted to stay on screen, while an empty message still binds the start tap to the canvas. Draw the text yourself with `textAlign()`, `textSize()`, `fill()`, `text()`, only while `started` is false, and set `started` in `userSetupComplete()` (p5-phone calls that after the request finishes, even if the person denies motion). Use `window.sensorsEnabled` as the gate. If the tap leaves the sketch stuck with the text still showing, stop and tell me instead of working around it.
 - Laptop: no check.
 - Phone: on iPhone, a motion permission prompt appears at the tap and I allow it. On Android there is no prompt. Either way the text disappears and the screen is fully black.
-- New numbers: `START_TEXT_SIZE`, `START_TEXT_Y` (how far down the screen the text sits).
+- New numbers: `START_TEXT_SIZE`, `START_TEXT_Y` (text size, and how far down the screen it sits, both fractions of the screen).
 
 ### Step 3. Keep the screen on
-- Build: ask the browser to keep the screen awake from the same start tap, and ask again whenever the page becomes visible again. If the browser refuses, carry on quietly. Show a temporary line on screen saying whether the lock is held.
-- Use: the browser's `navigator.wakeLock`, as the p5-phone skill's Screen Wake Lock section describes, requested from `mouseReleased()`, with a `visibilitychange` listener. This is not a p5-phone function. Do not invent one. Use `try`/`catch`. This will not work in the p5.js Web Editor. It needs my own hosted page.
+- Build: ask the browser to keep the screen awake from the same start tap, and ask again on any later tap while the lock is not held, and whenever the page becomes visible again. If the browser refuses, carry on quietly. Show a temporary line on screen saying whether the lock is held.
+- Use: the browser's `navigator.wakeLock`, as the p5-phone skill's Screen Wake Lock section describes: requested from `mouseReleased()` (which must also `return false`, like `mousePressed()`), guarded by a check that the lock isn't already held, with a `visibilitychange` listener and `try`/`catch`. This is not a p5-phone function. Do not invent one. This will not work in the p5.js Web Editor. It needs my own hosted page.
 - Laptop: no check.
-- Phone: after the start tap, the temporary line says the lock is held. I leave the phone untouched for over a minute, and the screen stays on. I lock the phone, unlock it, and the line says the lock was asked for again.
-- New numbers: none.
+- Phone: after the start tap, the temporary line says the lock is held. If iOS refused the first request while the motion prompt was still up, the next tap asks again and then the line says the lock is held. I leave the phone untouched for over a minute, and the screen stays on. I lock the phone, unlock it, and the line says the lock was asked for again.
+- New numbers: `READOUT_SIZE`, `READOUT_Y` (size and place of the temporary lines in this step and in steps 4 and 5, as fractions of the screen).
 
 ### Step 4. Read the motion
 - Build: after start, show the phone's acceleration as a number on screen, temporarily, and nothing else. It should be one number for how hard the phone is moving.
-- Use: `window.sensorsEnabled` before reading anything, p5's `accelerationX/Y/Z` and `pAccelerationX/Y/Z`, `mag()`, `nf()` or `text()` for the readout. No custom `devicemotion` listener, and no `rotationRate*` (p5 does not have it).
+- Use: `window.sensorsEnabled` before reading anything, p5's `accelerationX/Y/Z` and `pAccelerationX/Y/Z`, `mag()`, `nf()` or `text()` for the readout. No custom `devicemotion` listener, and no `rotationRate*` (p5 does not have it). If the number never rises while you swing: either motion was denied (p5-phone turns `sensorsEnabled` on either way, so the gate passes and the readout just sits at zero), or this phone reports its motion in a way p5 can't read, which may also pop p5-phone's debug overlay over the black screen. Stop and tell me what you see instead of writing down numbers.
 - Laptop: no check.
 - Phone: holding the phone still, the number sits low. Hanging in my hand and swinging as I walk, it rises on each swing. I write down roughly the highest value when swinging and the lowest when still, and give them to you.
 - New numbers: none.
@@ -96,35 +96,49 @@ Checks that use temporary text on screen (steps 3 to 5) are removed in step 10.
 - Phone: each arm swing adds exactly one to the count. Standing still adds nothing. A tap adds one. The start tap adds nothing.
 - New numbers: `SWING_SIZE`, `SWING_PAUSE_MS`.
 
-### Step 6. The glow, with one swing
-- Build: one soft warm glow, a fixed amber, with a soft edge that fades, sitting low and below the middle as in layout-lantern.jpg. No rays, no inner ring. A swing or tap brings it in over about 1 s. For now it stays lit.
-- Use: p5's own drawing only: `noStroke()`, `fill()` with alpha, `circle()`, `lerp()`, `map()`, `constrain()`, `millis()`. A soft edge can come from stacked circles that get fainter outward. No new libraries.
+### Step 6. The glow, drawn to the layout
+- Build: one soft warm glow, a fixed amber, sitting low and below the middle as in layout-lantern.jpg. No rays, no inner ring. For this step it is simply always lit, so its place, size and edge can be judged on their own. The soft edge comes from stacked circles: `GLOW_LAYERS` circles, largest and faintest at the outside, shrinking to a solid core, with `GLOW_SOFTNESS` setting how far the soft edge spreads past the core.
+- Use: p5's own drawing only: `noStroke()`, `fill()` with alpha, `circle()`, `map()`, `constrain()`. The amber is `COLOR_AMBER`, three plain numbers at the top, built into a p5 colour with `color()` in `setup()`. No new libraries.
 - Laptop: no check.
-- Phone: a swing or tap, and a glow fades in over about 1 s. Its position and size match the layout image. Its edge is soft, with no hard line anywhere.
-- New numbers: `GLOW_CENTER_Y`, `GLOW_SIZE`, `GLOW_SOFTNESS`, `GLOW_BRIGHTNESS`, `RETURN_MS`, `COLOR_AMBER`.
+- Phone: the glow sits where the layout image puts it and is the size it is there, its edge is soft with no hard line anywhere, and it stays like that however long I look.
+- New numbers: `GLOW_CENTER_Y`, `GLOW_SIZE` (place and size as fractions of the screen, starting at two thirds down and three quarters of the width), `GLOW_SOFTNESS`, `GLOW_LAYERS` (how many stacked circles the edge is made of), `GLOW_BRIGHTNESS`, `COLOR_AMBER` (three plain numbers).
 
-### Step 7. Wait and fade
-- Build: after the last swing, hold the glow for 4 s, then fade it to fully black over 5 s. The glow is a little bigger while it is lit and shrinks as it fades. A swing during the wait or the fade brings it back in about 1 s from wherever it is.
-- Use: `millis()`, `lerp()`, `constrain()`, `map()`.
+### Step 7. The glow answers a swing
+- Build: wire the glow to the swing count from step 5. It now starts at 0, a fully black screen, instead of always lit: a swing or a tap raises it to full over about 1 s, and while swings keep coming it stays lit.
+- Use: `millis()` for elapsed time, plus `map()` and `constrain()`: work out a 0 to 1 progress from how long ago the last swing was, over `RETURN_MS`, and drive brightness and size from that progress. Do not step by a fixed amount every frame, because that makes "about 1 s" depend on how fast the frames run.
 - Laptop: no check.
-- Phone: tap once, then watch. About 4 s of full glow, then about 5 s of fading and shrinking to a fully black screen. Tap again partway through the fade, and it returns in about 1 s.
+- Phone: the screen starts fully black. A swing or a tap brings the glow in over about 1 s, in the place and at the size step 6 settled. Keep swinging and it stays lit.
+- New numbers: `RETURN_MS`.
+
+### Step 8. Wait, then fade
+- Build: after the last swing, hold the glow for 4 s, then fade it to fully black over 5 s. The glow is a little bigger while it is lit and shrinks as it fades, driven by one shared level so size and brightness always fall together. Every swing resets the wait, so walking keeps it at full.
+- Use: `millis()` and the same elapsed-time progress as step 7, for `HOLD_MS` and `FADE_MS`, plus `map()`, `constrain()`.
+- Laptop: no check.
+- Phone: tap once, then watch. About 4 s of full glow, then about 5 s of fading and shrinking to a fully black screen. Tap again during the wait, and the 4 s starts over.
 - New numbers: `HOLD_MS`, `FADE_MS`, `SIZE_SMALL` (how much smaller than full size it ends up).
 
-### Step 8. Colour jump
+### Step 9. A swing during the wait or the fade
+- Build: a swing or tap during the 4 s wait or during the 5 s fade brings the glow back to full in about 1 s, starting from wherever it has got to, not from black.
+- Use: the same `RETURN_MS` progress as step 7, but rising from the current level instead of from 0. Nothing new to invent.
+- Laptop: no check.
+- Phone: tap again partway through the fade, and it returns to full glow in about 1 s. Tap during the wait, and it carries on at full glow.
+- New numbers: none.
+
+### Step 10. Colour jump
 - Build: on every swing or tap, pick a random warm shade between amber and red-orange and switch to it instantly, with no blend. No minimum difference from the last shade. The first swing from black picks one too.
-- Use: `random()`, `lerpColor()`, `color()`.
+- Use: `random()` and `lerpColor()` in `draw()`. Both end colours are three plain numbers at the top of the file, built into p5 colours with `color()` in `setup()`, because p5's functions do not exist at the top of the file.
 - Laptop: no check.
 - Phone: tap several times. Every tap changes the shade at once. Every shade is between amber and red-orange, with no yellow-green and no pink.
 - New numbers: `COLOR_RED_ORANGE`. Choose both end colours by eye and tell me what you picked.
 
-### Step 9. Tune on a walk
+### Step 11. Tune on a walk
 - Build: nothing new. Check that every tuning number is in the named values at the top of sketch.js with a comment. Change one number at a time, only what I ask.
 - Use: nothing new.
 - Laptop: no check.
 - Phone: I walk with the phone hanging in my swinging hand. The glow lights with my swing, holds while I keep walking, and fades when I stop. It doesn't flicker in the middle of a stride, and it doesn't die while I'm walking.
 - New numbers: none.
 
-### Step 10. Clean up and final check
+### Step 12. Clean up and final check
 - Build: remove the temporary readouts and wake lock line. Check the sketch against "How I will check it" and against layout-lantern.jpg. Report anything that does not match. Don't fix it without asking.
 - Use: nothing new.
 - Laptop: no check.
